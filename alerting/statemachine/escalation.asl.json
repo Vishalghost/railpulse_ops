@@ -1,0 +1,126 @@
+{
+  "Comment": "RailPulse escalation: page each rung of the ladder until someone acknowledges. ${...} placeholders are filled by CDK.",
+  "QueryLanguage": "JSONata",
+  "StartAt": "Init",
+  "States": {
+    "Init": {
+      "Type": "Pass",
+      "Assign": {
+        "incident": "{% $states.input.incident %}",
+        "key": "{% $states.input.key %}",
+        "ladder": "{% $states.input.ladder %}",
+        "severity": "{% $number($states.input.incident.severity) %}",
+        "level": 0
+      },
+      "Next": "CheckIncident"
+    },
+    "CheckIncident": {
+      "Comment": "Stop if someone acknowledged, the incident was resolved, or it was escalated (a newer execution owns it).",
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:getItem",
+      "Arguments": {
+        "TableName": "${IncidentsTable}",
+        "Key": { "pk": { "S": "{% $key.pk %}" }, "sk": { "S": "{% $key.sk %}" } },
+        "ConsistentRead": true
+      },
+      "Retry": [{ "ErrorEquals": ["States.ALL"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2 }],
+      "Next": "StillOpen"
+    },
+    "StillOpen": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Condition": "{% $exists($states.input.Item) and $states.input.Item.status.S = 'OPEN' and $number($states.input.Item.severity.N) = $severity %}",
+          "Next": "NeedsAck"
+        }
+      ],
+      "Default": "Superseded"
+    },
+    "NeedsAck": {
+      "Type": "Choice",
+      "Choices": [{ "Condition": "{% $ladder[$level].ack_timeout_s > 0 %}", "Next": "NotifyAndWait" }],
+      "Default": "NotifyOnly"
+    },
+    "NotifyAndWait": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Arguments": {
+        "FunctionName": "${NotifyFunctionArn}",
+        "Payload": {
+          "taskToken": "{% $states.context.Task.Token %}",
+          "incident": "{% $incident %}",
+          "key": "{% $key %}",
+          "step": "{% $ladder[$level] %}",
+          "level": "{% $level %}"
+        }
+      },
+      "TimeoutSeconds": "{% $ladder[$level].ack_timeout_s %}",
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.TooManyRequestsException"],
+          "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2
+        }
+      ],
+      "Catch": [{ "ErrorEquals": ["States.Timeout", "States.TaskFailed"], "Next": "NextRung" }],
+      "Next": "Acknowledged"
+    },
+    "NotifyOnly": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Arguments": {
+        "FunctionName": "${NotifyFunctionArn}",
+        "Payload": {
+          "incident": "{% $incident %}",
+          "key": "{% $key %}",
+          "step": "{% $ladder[$level] %}",
+          "level": "{% $level %}"
+        }
+      },
+      "Retry": [
+        {
+          "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException", "Lambda.TooManyRequestsException"],
+          "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2
+        }
+      ],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "NextRung" }],
+      "Next": "NextRung"
+    },
+    "NextRung": {
+      "Type": "Pass",
+      "Assign": { "level": "{% $level + 1 %}" },
+      "Next": "MoreRungs"
+    },
+    "MoreRungs": {
+      "Type": "Choice",
+      "Choices": [{ "Condition": "{% $level < $count($ladder) %}", "Next": "CheckIncident" }],
+      "Default": "LadderExhausted"
+    },
+    "LadderExhausted": {
+      "Type": "Choice",
+      "Choices": [{ "Condition": "{% $ladder[-1].ack_timeout_s > 0 %}", "Next": "MarkUnacknowledged" }],
+      "Default": "Done"
+    },
+    "MarkUnacknowledged": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Arguments": {
+        "TableName": "${IncidentsTable}",
+        "Key": { "pk": { "S": "{% $key.pk %}" }, "sk": { "S": "{% $key.sk %}" } },
+        "UpdateExpression": "SET escalation_state = :s",
+        "ConditionExpression": "#st = :open",
+        "ExpressionAttributeNames": { "#st": "status" },
+        "ExpressionAttributeValues": { ":s": { "S": "UNACKNOWLEDGED" }, ":open": { "S": "OPEN" } }
+      },
+      "Catch": [{ "ErrorEquals": ["DynamoDB.ConditionalCheckFailedException"], "Next": "Done" }],
+      "Next": "Unacknowledged"
+    },
+    "Unacknowledged": {
+      "Type": "Fail",
+      "Error": "Unacknowledged",
+      "Cause": "Nobody on the escalation ladder acknowledged the alert"
+    },
+    "Acknowledged": { "Type": "Succeed" },
+    "Superseded": { "Type": "Succeed" },
+    "Done": { "Type": "Succeed" }
+  }
+}

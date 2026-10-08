@@ -1,0 +1,8 @@
+{
+  "app": "python app.py",
+  "context": {
+    "stage": "dev",
+    "eb_solution_stack": "64bit Amazon Linux 2023 v4.13.9 running Docker",
+    "@aws-cdk/core:defaultCrossStackReferences": "strong"
+  }
+}

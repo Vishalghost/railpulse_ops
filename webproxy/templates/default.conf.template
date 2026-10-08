@@ -1,0 +1,66 @@
+# Rendered at container start by the nginx image's envsubst step (only variables that are
+# set in the environment are replaced, so nginx's own $variables are left alone).
+#
+# One origin for the dashboard and the API: static Next.js export + reverse proxy to FastAPI.
+
+# Origin lock: CloudFront adds X-Origin-Verify with a secret (from Secrets Manager); requests
+# that reach the ALB any other way — skipping WAF — are refused. Empty secret = local dev, open.
+map $http_x_origin_verify $origin_denied {
+    default 1;
+    "${ORIGIN_VERIFY_SECRET}" 0;
+}
+
+server {
+    listen 80;
+    server_tokens off;
+    root /usr/share/nginx/html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # ALB health checks come straight from the load balancer, without the CloudFront header.
+    location = /api/health {
+        proxy_pass http://api:8000;
+    }
+
+    # Live feed: never buffer, keep the stream open (the API pings every 15 s).
+    location /api/stream/ {
+        if ($origin_denied) { return 403; }
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_pass http://api:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;
+    }
+
+    location /api/ {
+        if ($origin_denied) { return 403; }
+        include /etc/nginx/snippets/security-headers.conf;
+        proxy_pass http://api:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+    }
+
+    # Content-hashed build assets: cache forever.
+    location /_next/static/ {
+        if ($origin_denied) { return 403; }
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+    }
+
+    # Pages: always revalidate so a deploy shows up immediately.
+    location / {
+        if ($origin_denied) { return 403; }
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache" always;
+        try_files $uri $uri.html $uri/ /index.html;
+    }
+}

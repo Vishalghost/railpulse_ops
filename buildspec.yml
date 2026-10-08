@@ -1,0 +1,49 @@
+# CodeBuild spec for the RailPulse pipeline (infra/railpulse_infra/pipeline_stack.py).
+# Test stage: every test suite, dashboard type-check + build, `cdk synth`.
+# Deploy stage (RAILPULSE_DEPLOY=true): dashboard build + `cdk deploy --all` (tests already passed).
+version: 0.2
+
+env:
+  shell: bash
+  variables:
+    STAGE: dev
+    RAILPULSE_DEPLOY: "false"
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+      nodejs: 20
+    commands:
+      - npm install -g aws-cdk@2 --no-audit --no-fund
+      - python -m venv .venv
+      - source .venv/bin/activate
+      - >-
+        pip install -q -r infra/requirements-dev.txt -r simulator/requirements.txt
+        -r worker/requirements-dev.txt -r alerting/requirements-dev.txt -r api/requirements-dev.txt
+  build:
+    commands:
+      - source .venv/bin/activate
+      - |
+        if [ "$RAILPULSE_DEPLOY" != "true" ]; then
+          for d in simulator worker alerting api infra; do
+            echo "== tests: $d"
+            (cd "$d" && python -m pytest -q -p no:cacheprovider) || exit 1
+          done
+        fi
+      - (cd dashboard && npm ci --no-audit --no-fund && npx tsc --noEmit && npm run build)
+      - |
+        CTX="-c stage=$STAGE"
+        [ -n "$GITHUB_REPO" ] && CTX="$CTX -c github_repo=$GITHUB_REPO -c codeconnection_arn=$CODECONNECTION_ARN"
+        [ -n "$OPS_EMAIL" ] && CTX="$CTX -c ops_email=$OPS_EMAIL"
+        cd infra
+        if [ "$RAILPULSE_DEPLOY" = "true" ]; then
+          cdk deploy --all --require-approval never $CTX
+        else
+          cdk synth --quiet $CTX
+        fi
+
+cache:
+  paths:
+    - /root/.npm/**/*
+    - /root/.cache/pip/**/*

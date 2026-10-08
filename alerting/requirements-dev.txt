@@ -1,0 +1,4 @@
+# Lambda runtime provides boto3; these are for local tests only.
+boto3>=1.35
+pytest>=8
+moto[dynamodb]>=5.0

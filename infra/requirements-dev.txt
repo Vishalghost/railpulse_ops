@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8
+sqlglot>=25    # offline Athena SQL validation (tests/test_analytics.py)
+pyyaml>=6      # buildspec.yml check (tests/test_pipeline.py)

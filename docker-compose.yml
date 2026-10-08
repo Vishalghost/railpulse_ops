@@ -1,0 +1,31 @@
+# Elastic Beanstalk web environment (Docker on Amazon Linux 2023, multi-container via Compose).
+# EB writes environment properties to .env next to this file, which Compose interpolates below.
+# Locally: create .env with the same names (see README) and `docker compose up --build`.
+services:
+  api:
+    build: ./api
+    restart: unless-stopped
+    environment:
+      RAILPULSE_REGION: ${RAILPULSE_REGION:-ap-south-1}
+      INCIDENTS_TABLE: ${INCIDENTS_TABLE:?set INCIDENTS_TABLE}
+      ASSETS_TABLE: ${ASSETS_TABLE:?set ASSETS_TABLE}
+      TELEMETRY_TABLE: ${TELEMETRY_TABLE:?set TELEMETRY_TABLE}
+      USER_POOL_ID: ${USER_POOL_ID:?set USER_POOL_ID}
+      COGNITO_DOMAIN: ${COGNITO_DOMAIN:?set COGNITO_DOMAIN}
+      USER_POOL_CLIENT_ID_PARAM: ${USER_POOL_CLIENT_ID_PARAM:-}
+      USER_POOL_CLIENT_ID: ${USER_POOL_CLIENT_ID:-}
+      MAP_API_KEY_NAME: ${MAP_API_KEY_NAME:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+    # On EB the instance profile supplies AWS credentials. Locally, add credentials in a
+    # docker-compose.override.yml (gitignored) rather than here.
+
+  web:
+    build: ./webproxy
+    restart: unless-stopped
+    environment:
+      # Set on EB from Secrets Manager; empty locally = no origin lock.
+      ORIGIN_VERIFY_SECRET: ${ORIGIN_VERIFY_SECRET:-}
+    ports:
+      - "80:80"
+    depends_on:
+      - api

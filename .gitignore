@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# CDK
+infra/cdk.out/
+infra/cdk.context.json
+
+# Simulator credentials — never commit device keys
+simulator/certs/
+
+# Node / Next.js
+node_modules/
+.next/
+dashboard/out/
+dashboard/next-env.d.ts
+*.tsbuildinfo
+
+# Build output copied into the nginx image
+webproxy/static/
+
+# Local-only compose credentials and env
+docker-compose.override.yml
+.env
+.env.*
