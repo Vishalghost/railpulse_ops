@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { Lamp } from "./Lamp";
-import { ago, ASPECT, km, ROLE_LABEL, TYPE_LABEL } from "@/lib/vocab";
+import { ago, ASPECT, DIVISION_NAME, km, ROLE_LABEL, TYPE_LABEL } from "@/lib/vocab";
 import type { Incident } from "@/lib/types";
 
-export function IncidentList({ incidents, now, divisionName }: { incidents: Incident[]; now: number; divisionName: string }) {
+export function IncidentList({ incidents, now, scopeName }: { incidents: Incident[]; now: number; scopeName: string }) {
   if (incidents.length === 0) {
     return (
       <div className="empty">
         <p className="empty-head">Line clear</p>
-        <p className="muted">No open incidents in {divisionName} division. New detections appear here as they happen.</p>
+        <p className="muted">No open incidents in {scopeName}. New detections appear here within seconds.</p>
       </div>
     );
   }
@@ -17,12 +17,18 @@ export function IncidentList({ incidents, now, divisionName }: { incidents: Inci
       {incidents.map((i) => (
         <li key={i.incident_id}>
           <Link href={`/incident?id=${encodeURIComponent(i.incident_id)}`} className={`incident sev-${i.severity}`}>
-            <Lamp severity={i.severity} size={12} flash={i.severity === 1 && i.status === "OPEN"} />
-            <span className="sev-tag">{ASPECT[i.severity].label}</span>
+            <span className="incident-sev">
+              <Lamp severity={i.severity} size={11} flash={i.severity === 1 && i.status === "OPEN"} />
+              <span className="sev-tag">{ASPECT[i.severity].label}</span>
+            </span>
             <span className="incident-what">
               <strong>{TYPE_LABEL[i.type] ?? i.type}</strong>
-              <span className="mono">
-                {i.segment_id} · {km(i.km_from)}
+              <span>
+                {i.section ?? i.segment_id}
+                <span className="muted"> · {i.line_name ?? DIVISION_NAME[i.division] ?? i.division}</span>
+              </span>
+              <span className="mono muted">
+                {i.segment_id} · {km(i.km_from)} · {ago(i.first_seen, now)}
               </span>
             </span>
             <span className="incident-state">
@@ -35,7 +41,6 @@ export function IncidentList({ incidents, now, divisionName }: { incidents: Inci
               ) : (
                 <span className="chip">Open</span>
               )}
-              <span className="muted mono">{ago(i.first_seen, now)}</span>
             </span>
           </Link>
         </li>

@@ -3,7 +3,8 @@
 IDs, km markers and URLs are appended *after* translation so they're never mangled.
 """
 
-DIVISION_NAMES = {"DLI": "Delhi", "MAS": "Chennai", "BB": "Mumbai"}
+DIVISION_NAMES = {"DLI": "Delhi", "BB": "Mumbai CSMT", "BCT": "Mumbai Central", "MAS": "Chennai",
+                  "HWH": "Howrah", "SC": "Secunderabad", "SBC": "Bengaluru", "LKO": "Lucknow"}
 
 TYPE_TEXT = {
     "CRACK_SUSPECTED": "Suspected rail crack",
@@ -44,7 +45,8 @@ def compose(incident: dict) -> str:
 def sms_body(core: str, incident: dict, ack_url: str | None) -> str:
     sev = int(incident["severity"])
     km = incident.get("km_from")
-    where = f"{incident['segment_id']}" + (f" km {float(km):.1f}" if km is not None else "")
+    place = ", ".join(p for p in (incident.get("line_name"), incident.get("section")) if p)
+    where = (f"{place}, " if place else "") + f"{incident['segment_id']}" + (f" km {float(km):.1f}" if km is not None else "")
     tail = f" ACK: {ack_url}" if ack_url else ""
     return f"RailPulse P{sev} | {core} | {where}{tail}"
 

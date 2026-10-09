@@ -20,7 +20,7 @@ from .identity import log_aws_identity
 from .live import LiveHub
 from .repo import STATUSES, Conflict, NotFound, Repo, public
 
-ALL_DIVISIONS = tuple(d for d in os.environ.get("DIVISIONS", "DLI,MAS,BB").split(",") if d)
+ALL_DIVISIONS = tuple(d for d in os.environ.get("DIVISIONS", "DLI,BB,BCT,MAS,HWH,SC,SBC,LKO").split(",") if d)
 DIVISION_RE = r"^[A-Z]{2,4}$"
 SEGMENT_RE = re.compile(r"^SEG-([A-Z]{2,4})-\d{3}$")
 SSE_PING_S = 15  # under CloudFront's 30 s origin read timeout
@@ -57,7 +57,9 @@ class Services:
         try:
             key = boto3.client("location", region_name=self.settings.region) \
                 .describe_key(KeyName=self.settings.map_key_name)["Key"]
-            url = f"https://maps.geo.{self.settings.region}.amazonaws.com/v2/styles/Standard/descriptor?key={key}"
+            # Dark monochrome basemap for the control-room view; India's official borders.
+            url = (f"https://maps.geo.{self.settings.region}.amazonaws.com/v2/styles/Monochrome/descriptor"
+                   f"?color-scheme=Dark&political-view=IND&key={key}")
         except Exception:
             url = None  # dashboard falls back to a schematic view
         self._map_style = (time.monotonic() + 3600, url)

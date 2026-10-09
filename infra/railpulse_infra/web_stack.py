@@ -38,7 +38,7 @@ from .names import ack_base_url_param, client_id_param, origin_secret_name
 
 ROLE_GROUPS = {"Admin": "All divisions, all actions", "DEN": "Divisional Engineer",
                "SSE": "Section Engineer (P.Way)", "Gangman": "Track maintainer"}
-DIVISION_GROUPS = ("DLI", "MAS", "BB")
+DIVISION_GROUPS = ("DLI", "BB", "BCT", "MAS", "HWH", "SC", "SBC", "LKO")
 LOCAL_DEV_ORIGIN = "http://localhost:3000"
 
 

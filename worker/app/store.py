@@ -87,6 +87,9 @@ class AssetRepo:
                 division=item["division"],
                 stress_free_temp_c=float(sft) if sft is not None else None,
                 km_from=float(km) if km is not None else None,
+                line_code=item.get("line_code"),
+                line_name=item.get("line_name"),
+                section=f"{item['from_station']} – {item['to_station']}" if item.get("from_station") else None,
             )
         self._cache[segment_id] = (time.monotonic() + self._ttl_s, info)
         return info
@@ -139,6 +142,9 @@ class IncidentRepo:
             "segment_id": msg.segment_id,
             "division": msg.division,
             "km_from": segment.km_from if segment else None,
+            "line_code": segment.line_code if segment else None,
+            "line_name": segment.line_name if segment else None,
+            "section": segment.section if segment else None,
             "first_seen": msg.ts,
             "last_seen": msg.ts,
             "occurrences": 1,

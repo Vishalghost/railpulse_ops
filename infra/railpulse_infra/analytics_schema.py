@@ -4,7 +4,7 @@ SQL tests (infra/tests/test_analytics.py checks every query against these column
 Both tables are JSON lines, gzipped, read with the OpenX JSON SerDe.
 """
 
-DIVISIONS = ("DLI", "MAS", "BB")
+DIVISIONS = ("DLI", "BB", "BCT", "MAS", "HWH", "SC", "SBC", "LKO")
 PROJECTION_START = "2026-01-01"
 
 # Union of every sensor type's metric keys (simulator/railpulse_sim/models.py). A test fails

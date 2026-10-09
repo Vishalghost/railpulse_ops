@@ -94,7 +94,7 @@ function IncidentView() {
     return (
       <main className="page narrow">
         <p role="alert">{error}</p>
-        <Link href="/">Back to the division</Link>
+        <Link href="/">Back to the network</Link>
       </main>
     );
   }
@@ -106,7 +106,7 @@ function IncidentView() {
 
   return (
     <main className="page">
-      <Link href="/" className="back">← {DIVISION_NAME[inc.division] ?? inc.division} division</Link>
+      <Link href="/" className="back">← Network</Link>
 
       <section className={`panel incident-head sev-${inc.severity}`}>
         <Lamp severity={inc.severity} size={28} flash={inc.severity === 1 && inc.status === "OPEN"} />
@@ -115,9 +115,18 @@ function IncidentView() {
             <span className="sev-tag">{aspect.label}</span> {aspect.action}
           </p>
           <h1 className="display">{TYPE_LABEL[inc.type] ?? inc.type}</h1>
-          <p className="mono">
+          {segment?.from_station && (
+            <p className="incident-place">
+              <span className="station-board">{segment.from_station}</span>
+              <span className="incident-place-rail" aria-hidden="true" />
+              <span className="station-board">{segment.to_station}</span>
+            </p>
+          )}
+          <p className="mono muted">
+            {segment?.line_name ?? inc.line_name ?? ""}
+            {(segment?.line_name ?? inc.line_name) ? " · " : ""}
             {inc.segment_id} · {km(inc.km_from)}
-            {segment?.km_to != null ? `–${segment.km_to.toFixed(1)}` : ""} · {DIVISION_NAME[inc.division] ?? inc.division}
+            {segment?.km_to != null ? `–${segment.km_to.toFixed(1)}` : ""} · {DIVISION_NAME[inc.division] ?? inc.division} division
           </p>
         </div>
         <dl className="facts">

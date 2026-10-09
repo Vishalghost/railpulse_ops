@@ -43,7 +43,8 @@ def start(event: dict, assets_table, sfn, state_machine_arn: str, timeout_overri
     severity = int(incident["severity"])
     km = incident.get("km_from")
     ladder = build_ladder(load_contacts(assets_table, incident["division"]), severity,
-                          float(km) if km is not None else None, timeout_override_s)
+                          float(km) if km is not None else None, timeout_override_s,
+                          line=incident.get("line_code"))
     if not ladder:
         log.warning("no escalation ladder for %s (P%s, %s)", incident["incident_id"], severity, incident["division"])
         return {"started": False, "reason": "no_ladder"}

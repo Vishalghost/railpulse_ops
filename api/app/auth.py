@@ -2,7 +2,7 @@
 
 Users carry two kinds of Cognito group:
   role      Admin | DEN | SSE | Gangman
-  division  DIV_DLI | DIV_MAS | DIV_BB      (Admin sees every division)
+  division  DIV_DLI | DIV_BB | DIV_MAS | …     (Admin sees every division)
 Groups ride in the access token's `cognito:groups` claim, so no user lookup per request.
 """
 

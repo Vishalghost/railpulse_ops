@@ -16,8 +16,25 @@ def test_fleet_is_deterministic_and_ids_are_unique():
     assert [s.sensor_id for s in a.sensors] == [s.sensor_id for s in b.sensors]
     ids = [s.sensor_id for s in a.sensors]
     assert len(ids) == len(set(ids))
-    # 3 divisions × 22 segments × 3 sensors + 4 switch sensors per division
-    assert len(ids) == 3 * (22 * 3 + 4)
+    # 3 sensors per block section, plus a point-machine monitor on every 3rd block of a line
+    assert len(ids) == 3 * len(a.segments) + sum(seg.has_switch for seg in a.segments)
+
+
+def test_lines_are_continuous_station_to_station():
+    fleet = build_fleet()
+    assert {s.division.code for s in fleet.segments} == {"DLI", "BB", "BCT", "MAS", "HWH", "SC", "SBC", "LKO"}
+    by_line: dict[str, list] = {}
+    for seg in fleet.segments:
+        by_line.setdefault(seg.line.code + seg.division.code, []).append(seg)
+        assert 6 < seg.lat < 36 and 68 < seg.lon < 98  # inside India
+        assert 0.3 < seg.km_to - seg.km_from < 40      # a plausible block section
+    for segs in by_line.values():
+        for prev, nxt in zip(segs, segs[1:]):
+            assert prev.to_station == nxt.from_station
+            assert prev.km_to == nxt.km_from
+    main = [s for s in fleet.segments if s.line.code == "ML"]
+    assert (main[0].from_station, main[-1].to_station) == ("CSMT", "Kalyan")
+    assert 50 < main[-1].km_to < 57  # CSMT–Kalyan is ~54 km
 
 
 def test_topic_carries_division_and_sensor_id():

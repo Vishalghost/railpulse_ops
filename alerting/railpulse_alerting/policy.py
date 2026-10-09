@@ -11,25 +11,29 @@ ESCALATION_POLICY: dict[int, list[tuple[str, int]]] = {
 }
 
 
-def _covers(contact: dict, km: float | None) -> bool:
-    lo, hi = contact.get("beat_km_from"), contact.get("beat_km_to")
-    if km is None or lo is None or hi is None:
+def _covers(contact: dict, km: float | None, line: str | None) -> bool:
+    """A beat is a line, optionally narrowed to a km range on it (km restarts on every line)."""
+    beat_line = contact.get("beat_line")
+    if beat_line is not None and beat_line != line:
         return False
-    return float(lo) <= km < float(hi)
+    lo, hi = contact.get("beat_km_from"), contact.get("beat_km_to")
+    if lo is None or hi is None:
+        return beat_line is not None
+    return km is not None and float(lo) <= km < float(hi)
 
 
 def build_ladder(contacts: list[dict], severity: int, km: float | None,
-                 timeout_override_s: int | None = None) -> list[dict]:
+                 timeout_override_s: int | None = None, line: str | None = None) -> list[dict]:
     """One rung per role in the policy that has at least one reachable contact.
 
-    Gangmen are matched to the segment by their beat (km range); if nobody's beat covers it,
-    every gangman in the division is paged rather than nobody.
+    Gangmen are matched to the segment by their beat (line and km range); if nobody's beat
+    covers it, every gangman in the division is paged rather than nobody.
     `timeout_override_s` shortens every waiting rung — used to make escalation visible in demos.
     """
     ladder = []
     for role, timeout in ESCALATION_POLICY.get(severity, []):
         in_role = [c for c in contacts if c.get("role") == role]
-        people = [c for c in in_role if _covers(c, km)] or in_role
+        people = [c for c in in_role if _covers(c, km, line)] or in_role
         if not people:
             continue
         if timeout and timeout_override_s:

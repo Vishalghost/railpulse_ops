@@ -13,7 +13,7 @@ import string
 import boto3
 
 ROLES = ("Admin", "DEN", "SSE", "Gangman")
-DIVISIONS = ("DLI", "MAS", "BB")
+DIVISIONS = ("DLI", "BB", "BCT", "MAS", "HWH", "SC", "SBC", "LKO")
 
 
 def temp_password() -> str:

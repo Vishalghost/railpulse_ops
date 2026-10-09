@@ -1,19 +1,19 @@
 import type { Severity } from "./types";
 
 /**
- * Severity is drawn as a railway signal aspect. Colours were validated for colour-blind
- * separation against the panel surface (dataviz validator); P3 uses an advisory indigo
- * rather than a second yellow because amber vs yellow failed even for normal vision.
- * The lamp count (P3 = two lamps) and the always-visible "P#" label are the secondary
- * encodings, so severity never relies on colour alone.
+ * Severity is drawn as a railway signal aspect on a dark control-room board. Red and orange
+ * are separated by lightness as well as hue, so they stay apart for red-green colour-blind
+ * viewers; P3 is an advisory lavender rather than a second warm colour. The lamp count
+ * (P3 = two lamps) and the always-visible "P#" label are the secondary encodings, so
+ * severity never relies on colour alone. Station-board yellow is reserved for stations.
  */
 export const ASPECT: Record<Severity, { color: string; lamps: 1 | 2; label: string; action: string }> = {
-  1: { color: "#C42B1C", lamps: 1, label: "P1", action: "Protect the line and inspect now" },
-  2: { color: "#DB7C00", lamps: 1, label: "P2", action: "Inspect this shift" },
-  3: { color: "#5A54A8", lamps: 2, label: "P3", action: "Inspect within 24 hours" },
-  4: { color: "#6B7780", lamps: 1, label: "P4", action: "Advisory" },
+  1: { color: "#F0453A", lamps: 1, label: "P1", action: "Protect the line and inspect now" },
+  2: { color: "#FF9D2E", lamps: 1, label: "P2", action: "Inspect this shift" },
+  3: { color: "#9E8CFF", lamps: 2, label: "P3", action: "Inspect within 24 hours" },
+  4: { color: "#8796A5", lamps: 1, label: "P4", action: "Advisory" },
 };
-export const CLEAR = "#2B8A4E";
+export const CLEAR = "#35C47C";
 
 export const TYPE_LABEL: Record<string, string> = {
   CRACK_SUSPECTED: "Suspected rail crack",
@@ -29,7 +29,18 @@ export const TYPE_LABEL: Record<string, string> = {
   LOW_BATTERY: "Sensor battery low",
 };
 
-export const DIVISION_NAME: Record<string, string> = { DLI: "Delhi", MAS: "Chennai", BB: "Mumbai" };
+export const DIVISION_NAME: Record<string, string> = {
+  DLI: "Delhi",
+  BB: "Mumbai CSMT",
+  BCT: "Mumbai Central",
+  MAS: "Chennai",
+  HWH: "Howrah",
+  SC: "Secunderabad",
+  SBC: "Bengaluru",
+  LKO: "Lucknow",
+};
+
+export const ALL = "ALL";
 
 export const ROLE_LABEL: Record<string, string> = {
   GANGMAN: "Gangman",

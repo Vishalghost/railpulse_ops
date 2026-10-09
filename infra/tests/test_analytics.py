@@ -81,7 +81,7 @@ def test_tables_use_partition_projection_not_crawlers(t):
     t.resource_count_is("AWS::Glue::Crawler", 0)
     t.has_resource_properties("AWS::Glue::Table", {"TableInput": Match.object_like({
         "Name": "telemetry_raw",
-        "Parameters": Match.object_like({"projection.enabled": "true", "projection.division.values": "DLI,MAS,BB",
+        "Parameters": Match.object_like({"projection.enabled": "true", "projection.division.values": "DLI,BB,BCT,MAS,HWH,SC,SBC,LKO",
                                          "projection.dt.type": "date"}),
     })})
     t.has_resource_properties("AWS::Glue::Table", {"TableInput": Match.object_like({"Name": "incident_events"})})

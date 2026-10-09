@@ -39,6 +39,26 @@ def test_missing_roles_are_skipped_not_fatal():
     assert [r["role"] for r in build_ladder(CONTACTS[2:3], 1, 5.0)] == ["SSE"]
 
 
+LINE_CONTACTS = [
+    {"contact_id": "gm-ml", "role": "GANGMAN", "lang": "mr", "beat_line": "ML"},
+    {"contact_id": "gm-hb", "role": "GANGMAN", "lang": "mr", "beat_line": "HB"},
+    {"contact_id": "sse-bb", "role": "SSE", "lang": "mr"},
+]
+
+
+def test_gangman_beat_is_the_line_since_km_restarts_on_every_line():
+    ladder = build_ladder(LINE_CONTACTS, 1, km=5.0, line="HB")
+    assert [c["contact_id"] for c in ladder[0]["contacts"]] == ["gm-hb"]
+    # Unknown line: nobody's beat matches, so every gangman in the division is paged.
+    assert len(build_ladder(LINE_CONTACTS, 1, km=5.0, line=None)[0]["contacts"]) == 2
+
+
+def test_sms_names_line_and_section_when_known():
+    incident = {**INCIDENT, "line_name": "Central main line", "section": "Thane – Diva"}
+    body = sms_body(compose(incident), incident, None)
+    assert body.endswith("| Central main line, Thane – Diva, SEG-DLI-012 km 11.0")
+
+
 def test_message_wording_and_sms_tail_kept_out_of_translation():
     core = compose(INCIDENT)
     assert "Suspected rail crack in Delhi division" in core

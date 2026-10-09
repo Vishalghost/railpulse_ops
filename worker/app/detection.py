@@ -51,6 +51,9 @@ class SegmentInfo:
     division: str
     stress_free_temp_c: float | None = None
     km_from: float | None = None
+    line_code: str | None = None
+    line_name: str | None = None
+    section: str | None = None  # "Thane – Diva"
 
 
 @dataclass(frozen=True)

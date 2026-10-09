@@ -19,6 +19,9 @@ export interface Incident {
   segment_id: string;
   division: string;
   km_from?: number | null;
+  line_code?: string | null;
+  line_name?: string | null;
+  section?: string | null;
   first_seen: number;
   last_seen: number;
   occurrences: number;
@@ -54,13 +57,31 @@ export interface TimelineEntry {
 
 export interface MapSegment {
   segment_id: string;
+  division: string; // added client-side: the map endpoint is per division
+  line_code: string;
+  line_name: string;
+  line_seq: number;
+  from_station: string;
+  to_station: string;
   km_from: number;
   km_to: number;
-  lat: number;
-  lon: number;
+  from_lat: number;
+  from_lon: number;
+  to_lat: number;
+  to_lon: number;
   has_switch: boolean;
   worst_severity: Severity | null;
   worst_incident: string | null;
+}
+
+/** One running line: its block sections in order, and the worst aspect on any of them. */
+export interface LineView {
+  key: string; // division + line code; line codes are only unique within a division
+  division: string;
+  code: string;
+  name: string;
+  segments: MapSegment[];
+  worst: Severity | null;
 }
 
 export interface SegmentMeta {
@@ -68,6 +89,9 @@ export interface SegmentMeta {
   division: string;
   km_from?: number;
   km_to?: number;
+  line_name?: string;
+  from_station?: string;
+  to_station?: string;
   stress_free_temp_c?: number;
 }
 

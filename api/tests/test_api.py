@@ -29,7 +29,7 @@ def test_me_reports_roles_and_divisions(client):
     assert client.get("/api/me", headers=auth(DLI_SSE)).json() == {
         "username": "tester", "roles": ["SSE"], "divisions": ["DLI"], "canResolve": True}
     admin = client.get("/api/me", headers=auth(ADMIN)).json()
-    assert admin["divisions"] == ["DLI", "MAS", "BB"]
+    assert admin["divisions"] == ["DLI", "BB", "BCT", "MAS", "HWH", "SC", "SBC", "LKO"]
 
 
 # --- incidents ------------------------------------------------------------------------------

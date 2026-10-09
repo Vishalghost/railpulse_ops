@@ -17,7 +17,8 @@ SELECT
     night_of,
     round(min(rail_c), 1) AS coldest_rail_c,
     -- Mirrors stress_free_temp_c in the Assets table (simulator/railpulse_sim/fleet.py).
-    round(min(rail_c) - CASE division WHEN 'DLI' THEN 35 WHEN 'MAS' THEN 40 WHEN 'BB' THEN 38 END, 1)
+    round(min(rail_c) - CASE division WHEN 'DLI' THEN 35 WHEN 'BB' THEN 38 WHEN 'BCT' THEN 38 WHEN 'MAS' THEN 40
+                     WHEN 'HWH' THEN 37 WHEN 'SC' THEN 38 WHEN 'SBC' THEN 35 WHEN 'LKO' THEN 35 END, 1)
         AS below_stress_free_c,
     min_by(segment_id, rail_c) AS coldest_segment
 FROM temps
